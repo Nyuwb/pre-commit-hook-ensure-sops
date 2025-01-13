@@ -16,8 +16,8 @@ secrets to a repo, better safe than sorry :)
 Add this to your `.pre-commit-config.yaml`:
 
 ```yaml
-  - repo: https://github.com/yuvipanda/pre-commit-hook-ensure-sops
-    rev: v1.0
+  - repo: https://github.com/Nyuwb/pre-commit-hook-ensure-sops
+    rev: 1.2.0
     hooks:
       - id: sops-encryption
         # Uncomment to exclude all markdown files from encryption
