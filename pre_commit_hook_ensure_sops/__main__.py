@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 import json
 from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
+from dotenv import dotenv_values
 import sys
 
 yaml = YAML(typ='safe')
@@ -45,6 +46,8 @@ def check_file(filename):
     # .yaml, but json otherwise
     if filename.endswith('.yaml'):
         loader_func = yaml.load
+    elif filename.endswith('.env'):
+        loader_func = dotenv_values
     else:
         loader_func = json.load
     # sops doesn't have a --verify (https://github.com/mozilla/sops/issues/437)
@@ -54,17 +57,21 @@ def check_file(filename):
         try:
             doc = loader_func(f)
         except ParserError:
-            # All sops encrypted files are valid JSON or YAML
-            return False, f"{filename}: Not valid JSON or YAML, is not properly encrypted"
+            # All sops encrypted files are valid JSON, YAML or ENV
+            return False, f"{filename}: Not valid JSON, YAML or ENV is not properly encrypted"
 
-    if 'sops' not in doc:
+    # sops key is for JSON/YAML and sops_mac is for .env files
+    if 'sops' not in doc and 'sops_mac' not in doc:
         # sops puts a `sops` key in the encrypted output. If it is not
         # present, very likely the file is not encrypted.
         return False, f"{filename}: sops metadata key not found in file, is not properly encrypted"
 
     invalid_keys = []
     for k in doc:
-        if k != 'sops':
+        if k != 'sops' and not k.startswith('sops_'):
+            # sops keys in env files get flattened
+            if filename.endswith('.env') and k.startswith('sops_'):
+                continue
             # Values under the `sops` key are not encrypted.
             if not validate_enc(doc[k]):
                 # Collect all invalid keys so we can provide useful error message

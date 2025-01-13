@@ -20,6 +20,7 @@ setuptools.setup(
     },
     install_requires=[
         "ruamel.yaml",
+        "python-dotenv",
     ],
     test_requires=[
         "pytest",
